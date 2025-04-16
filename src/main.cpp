@@ -25,6 +25,8 @@ using namespace glm;
 // git fetch
 // git pull
 
+//test init
+
 // 3d array
 std::vector<std::vector<std::vector<unsigned int>>> map = {};
 
