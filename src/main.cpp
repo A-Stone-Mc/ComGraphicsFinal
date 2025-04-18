@@ -107,6 +107,8 @@ int main(int argc, char* argv[])
     Canis::GLTexture chimneyTexture = Canis::LoadImageGL("assets/textures/aidanWall.png", true);
     Canis::GLTexture doorTexture = Canis::LoadImageGL("assets/textures/oak_log.png", true);
     Canis::GLTexture roofTexture = Canis::LoadImageGL("assets/textures/aidanRoof.png", true);
+    Canis::GLTexture roseTexture = Canis::LoadImageGL("assets/textures/aidanRoses.png", true);
+    Canis::GLTexture orchidTexture = Canis::LoadImageGL("assets/textures/blue_orchid.png", true);
     /// End of Image Loading
 
     /// Load Models
@@ -170,16 +172,21 @@ int main(int argc, char* argv[])
             grassBlock.specular = &textureSpecular;         // Lighting 
             grassBlock.model = &cubeModel;                  // cube
             grassBlock.shader = &grassShader;               // wind shader
+            grassBlock.shader->Use();
+            grassBlock.shader->SetFloat("MATERIAL.shininess", 4); // make grass matte
+            grassBlock.shader->UnUse();
             grassBlock.transform.position = glm::vec3(x, 0.0f, z); 
             world.Spawn(grassBlock);                        // Add entity
         }
     }
 
+    //origins of house pos, can set the size of house here
     int houseStartX = 2;
     int houseStartZ = 2;
     int houseSize = 10;
 
     //add door before house so not overriden by walls
+    //door 2 blocks wide, 3 blocks tall
     for (int y = 0; y < 3; y++) {
         for (int x = houseStartX + 4; x <= houseStartX + 5; x++) {
             Canis::Entity door;
@@ -187,6 +194,9 @@ int main(int argc, char* argv[])
             door.tag = "door";
             door.model = &cubeModel;
             door.shader = &shader;
+            door.shader->Use();
+            door.shader->SetFloat("MATERIAL.shininess", 2); // dull 
+            door.shader->UnUse();
             door.specular = &textureSpecular;
             door.albedo = &doorTexture;
             door.transform.position = glm::vec3(x, y + 1.0f, houseStartZ);
@@ -196,8 +206,6 @@ int main(int argc, char* argv[])
 
     //building the house (5-block tall walls, 10 x 10 base)
 
-   
-    
     for (int y = 0; y < 5; y++) { // make walls 5 blocks tall
         for (int x = houseStartX; x < houseStartX + houseSize; x++) {
             for (int z = houseStartZ; z < houseStartZ + houseSize; z++) {
@@ -212,6 +220,9 @@ int main(int argc, char* argv[])
                 block.model = &cubeModel;
                 block.shader = &shader;
                 block.specular = &textureSpecular;
+                block.shader->Use();
+                block.shader->SetFloat("MATERIAL.shininess", 32); // a little reflective 
+                block.shader->UnUse();
                 block.transform.position = glm::vec3(x, y + 1.0f, z); // y+1 so it's above the ground
                 block.tag = "house";
     
@@ -234,8 +245,12 @@ int main(int argc, char* argv[])
                     ((x == houseStartX) && (z == houseStartZ + 3 || z == houseStartZ + 4) && (y == 2 || y == 3)) ||
                     // Right 
                     ((x == houseStartX + houseSize - 1) && (z == houseStartZ + 3 || z == houseStartZ + 4) && (y == 2 || y == 3))
-                ) {
+                ) 
+                {
                     block.albedo = &glassTexture;
+                    block.shader->Use();
+                    block.shader->SetFloat("MATERIAL.shininess", 300); // really shiny glass
+                    block.shader->UnUse();
                 }
 
                 // the walls
@@ -301,9 +316,60 @@ int main(int argc, char* argv[])
         chimney.specular = &textureSpecular;
         chimney.albedo = &chimneyTexture;
     
-        // Placing at back-left corner of roof
+        // Placing at back  left corner of roof
         chimney.transform.position = glm::vec3(houseStartX + 1, y, houseStartZ + houseSize - 2);
         world.Spawn(chimney);
+    }
+
+    srand(static_cast<unsigned int>(time(0))); // Seed randomness (from stackOverflow)
+
+    //spawing the flowers outside
+    //house pos is x 2-11 and z 2-11
+    for (int i = 0; i < 40; i++) { // 40 flowers seems to work good
+        int x = rand() % 15;
+        int z = rand() % 15;
+
+        // skipping house pos to only put outside
+        if (x >= 2 && x <= 11 && z >= 2 && z <= 11)
+            continue;
+
+        Canis::Entity flower;
+        flower.active = true;
+        flower.tag = "flower";
+        flower.model = &grassModel; //reuse plant model
+        flower.shader = &grassShader; // same wind effect
+        flower.shader->Use();
+        flower.shader->SetFloat("MATERIAL.shininess", 16); //slightly shiny
+        flower.shader->UnUse();
+        flower.specular = &textureSpecular;
+
+        //randomly pick rose or orchid
+        flower.albedo = (rand() % 2 == 0) ? &roseTexture : &orchidTexture;
+
+        flower.transform.position = glm::vec3(x, 1.0f, z); // On top of grass
+        world.Spawn(flower);
+    }
+
+    //20 random grass with flower
+    for (int i = 0; i < 20; i++) {
+        int x = rand() % 15;
+        int z = rand() % 15;
+
+        
+    
+        // Avoid house area
+        if (x >= 2 && x <= 11 && z >= 2 && z <= 11)
+            continue;
+    
+        Canis::Entity grassTop;
+        grassTop.active = true;
+        grassTop.tag = "grass_top";
+        grassTop.model = &grassModel;         // plant model
+        grassTop.shader = &grassShader;       //wind
+        grassTop.specular = &textureSpecular;
+        grassTop.albedo = &grassTexture;     
+        grassTop.transform.position = glm::vec3(x, 1.0f, z); // sits on top first grasss
+        world.Spawn(grassTop);
     }
 
     double deltaTime = 0.0;
