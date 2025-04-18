@@ -35,6 +35,11 @@ void SpawnLights(Canis::World &_world);
 void LoadMap(std::string _path);
 void Rotate(Canis::World &_world, Canis::Entity &_entity, float _deltaTime);
 
+//new bool to check door pos
+bool IsDoorBlock(int x, int y, int z, int houseStartX, int houseStartZ) {
+    return ((x == houseStartX + 4 || x == houseStartX + 5) && z == houseStartZ && (y >= 0 && y <= 2));
+}
+
 #ifdef _WIN32
 #define main SDL_main
 extern "C" int main(int argc, char* argv[])
@@ -96,6 +101,12 @@ int main(int argc, char* argv[])
     Canis::GLTexture glassTexture = Canis::LoadImageGL("assets/textures/glass.png", true);
     Canis::GLTexture grassTexture = Canis::LoadImageGL("assets/textures/grass.png", false);
     Canis::GLTexture textureSpecular = Canis::LoadImageGL("assets/textures/container2_specular.png", true);
+    //custom textures (made textures on piskel that start with aidan)
+    Canis::GLTexture ivyTexture = Canis::LoadImageGL("assets/textures/aidanStoneIvyTexture.png", true);
+    Canis::GLTexture oakPlankTexture = Canis::LoadImageGL("assets/textures/oak_planks.png", true);
+    Canis::GLTexture chimneyTexture = Canis::LoadImageGL("assets/textures/aidanWall.png", true);
+    Canis::GLTexture doorTexture = Canis::LoadImageGL("assets/textures/oak_log.png", true);
+    Canis::GLTexture roofTexture = Canis::LoadImageGL("assets/textures/aidanRoof.png", true);
     /// End of Image Loading
 
     /// Load Models
@@ -106,8 +117,10 @@ int main(int argc, char* argv[])
     // Load Map into 3d array
     LoadMap("assets/maps/level.map");
 
+
+    //commenting this out to disable the map-based spawing
     // Loop map and spawn objects
-    for (int y = 0; y < map.size(); y++)
+    /*for (int y = 0; y < map.size(); y++)
     {
         for (int x = 0; x < map[y].size(); x++)
         {
@@ -142,6 +155,155 @@ int main(int argc, char* argv[])
                 }
             }
         }
+    } */
+
+    
+// Adding the 15x15 plot of grass
+// placing each block at height of zeoro
+
+    for (int x = 0; x < 15; x++) {
+        for (int z = 0; z < 15; z++) {
+            Canis::Entity grassBlock;
+            grassBlock.active = true;
+            grassBlock.tag = "grass";
+            grassBlock.albedo = &grassTexture;              // Texture 
+            grassBlock.specular = &textureSpecular;         // Lighting 
+            grassBlock.model = &cubeModel;                  // cube
+            grassBlock.shader = &grassShader;               // wind shader
+            grassBlock.transform.position = glm::vec3(x, 0.0f, z); 
+            world.Spawn(grassBlock);                        // Add entity
+        }
+    }
+
+    int houseStartX = 2;
+    int houseStartZ = 2;
+    int houseSize = 10;
+
+    //add door before house so not overriden by walls
+    for (int y = 0; y < 3; y++) {
+        for (int x = houseStartX + 4; x <= houseStartX + 5; x++) {
+            Canis::Entity door;
+            door.active = true;
+            door.tag = "door";
+            door.model = &cubeModel;
+            door.shader = &shader;
+            door.specular = &textureSpecular;
+            door.albedo = &doorTexture;
+            door.transform.position = glm::vec3(x, y + 1.0f, houseStartZ);
+            world.Spawn(door);
+        }
+    }
+
+    //building the house (5-block tall walls, 10 x 10 base)
+
+   
+    
+    for (int y = 0; y < 5; y++) { // make walls 5 blocks tall
+        for (int x = houseStartX; x < houseStartX + houseSize; x++) {
+            for (int z = houseStartZ; z < houseStartZ + houseSize; z++) {
+                // make sure inside empty and not on door
+                if (((x > houseStartX && x < houseStartX + houseSize - 1) &&
+                (z > houseStartZ && z < houseStartZ + houseSize - 1)) ||
+                IsDoorBlock(x, y, z, houseStartX, houseStartZ))
+                continue;
+    
+                Canis::Entity block;
+                block.active = true;
+                block.model = &cubeModel;
+                block.shader = &shader;
+                block.specular = &textureSpecular;
+                block.transform.position = glm::vec3(x, y + 1.0f, z); // y+1 so it's above the ground
+                block.tag = "house";
+    
+                // Basse: 2 layers of oak planks
+                if (y < 2) {
+                    block.albedo = &oakPlankTexture;
+                }
+                
+                // door going over 3 layers, make it 2 blocks wide
+                /*
+                else if ((x == houseStartX + 4 || x == houseStartX + 5) && z == houseStartZ && (y == 0 || y == 1 || y == 2)) {
+                    block.albedo = &doorTexture;
+                }
+                */
+                //windows are 2 blocks big on layer 3
+                else if (
+                    // Back 
+                    ((z == houseStartZ + houseSize - 1) && (x == houseStartX + 3 || x == houseStartX + 4) && (y == 2 || y == 3)) ||
+                    // Left 
+                    ((x == houseStartX) && (z == houseStartZ + 3 || z == houseStartZ + 4) && (y == 2 || y == 3)) ||
+                    // Right 
+                    ((x == houseStartX + houseSize - 1) && (z == houseStartZ + 3 || z == houseStartZ + 4) && (y == 2 || y == 3))
+                ) {
+                    block.albedo = &glassTexture;
+                }
+
+                // the walls
+                else {
+                    block.albedo = &ivyTexture;
+                }
+    
+                world.Spawn(block);
+            }
+        }
+    }
+
+    //oak plank floors inside
+    for (int x = houseStartX + 1; x < houseStartX + houseSize - 1; x++) {
+        for (int z = houseStartZ + 1; z < houseStartZ + houseSize - 1; z++) {
+            Canis::Entity floor;
+            floor.active = true;
+            floor.tag = "floor";
+            floor.model = &cubeModel;
+            floor.shader = &shader;
+            floor.specular = &textureSpecular;
+            floor.albedo = &oakPlankTexture;
+            floor.transform.position = glm::vec3(x, 1.0f, z); // base layer
+            world.Spawn(floor);
+        }
+    }
+
+
+
+
+    //making an overhanging roof in a pointy shape
+    int roofBaseY = 6; //start above the walls
+    int overhang = 1;
+
+    for (int i = 0; i < 3; i++) {
+        int startX = houseStartX - overhang + i;
+        int endX = houseStartX + houseSize + overhang - i;
+        int startZ = houseStartZ - overhang + i;
+        int endZ = houseStartZ + houseSize + overhang - i;
+
+        for (int x = startX; x < endX; x++) {
+            for (int z = startZ; z < endZ; z++) {
+                Canis::Entity roofBlock;
+                roofBlock.active = true;
+                roofBlock.model = &cubeModel;
+                roofBlock.shader = &shader;
+                roofBlock.specular = &textureSpecular;
+                roofBlock.albedo = &roofTexture;
+                roofBlock.tag = "roof";
+                roofBlock.transform.position = glm::vec3(x, roofBaseY + i, z);
+                world.Spawn(roofBlock);
+            }
+        }
+    }
+
+    //put chimney on top of roof
+    for (int y = 9; y < 12; y++) { // put it above the roof
+        Canis::Entity chimney;
+        chimney.active = true;
+        chimney.tag = "chimney";
+        chimney.model = &cubeModel;
+        chimney.shader = &shader;
+        chimney.specular = &textureSpecular;
+        chimney.albedo = &chimneyTexture;
+    
+        // Placing at back-left corner of roof
+        chimney.transform.position = glm::vec3(houseStartX + 1, y, houseStartZ + houseSize - 2);
+        world.Spawn(chimney);
     }
 
     double deltaTime = 0.0;
