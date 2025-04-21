@@ -100,6 +100,7 @@ int main(int argc, char* argv[])
     /// Load Image
     Canis::GLTexture glassTexture = Canis::LoadImageGL("assets/textures/glass.png", true);
     Canis::GLTexture grassTexture = Canis::LoadImageGL("assets/textures/grass.png", false);
+    Canis::GLTexture grassBlockTexture = Canis::LoadImageGL("assets/textures/grass_block_top.png", false);
     Canis::GLTexture textureSpecular = Canis::LoadImageGL("assets/textures/container2_specular.png", true);
     //custom textures (made textures on piskel that start with aidan)
     Canis::GLTexture ivyTexture = Canis::LoadImageGL("assets/textures/aidanStoneIvyTexture.png", true);
@@ -168,10 +169,10 @@ int main(int argc, char* argv[])
             Canis::Entity grassBlock;
             grassBlock.active = true;
             grassBlock.tag = "grass";
-            grassBlock.albedo = &grassTexture;              // Texture 
+            grassBlock.albedo = &grassBlockTexture;              // Texture 
             grassBlock.specular = &textureSpecular;         // Lighting 
             grassBlock.model = &cubeModel;                  // cube
-            grassBlock.shader = &grassShader;               // wind shader
+            grassBlock.shader = &shader;               
             grassBlock.shader->Use();
             grassBlock.shader->SetFloat("MATERIAL.shininess", 4); // make grass matte
             grassBlock.shader->UnUse();
