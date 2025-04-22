@@ -110,6 +110,12 @@ int main(int argc, char* argv[])
     Canis::GLTexture roofTexture = Canis::LoadImageGL("assets/textures/aidanRoof.png", true);
     Canis::GLTexture roseTexture = Canis::LoadImageGL("assets/textures/aidanRoses.png", true);
     Canis::GLTexture orchidTexture = Canis::LoadImageGL("assets/textures/blue_orchid.png", true);
+    //letter textures
+    Canis::GLTexture letterA = Canis::LoadImageGL("assets/textures/Mattahan-Umicons-Letter-A.16.png", true);
+    Canis::GLTexture letterI = Canis::LoadImageGL("assets/textures/Mattahan-Umicons-Letter-I.16.png", true);
+    Canis::GLTexture letterD = Canis::LoadImageGL("assets/textures/Mattahan-Umicons-Letter-D.16.png", true);
+    Canis::GLTexture letterN = Canis::LoadImageGL("assets/textures/Mattahan-Umicons-Letter-N.16.png", true);
+    Canis::GLTexture letterM = Canis::LoadImageGL("assets/textures/Mattahan-Umicons-Letter-M.16.png", true);
     /// End of Image Loading
 
     /// Load Models
@@ -262,6 +268,33 @@ int main(int argc, char* argv[])
                 world.Spawn(block);
             }
         }
+    }
+
+    //spelling my name
+    std::vector<std::pair<int, Canis::GLTexture*>> nameLetters = {
+        {4, &letterM},   //used pairing function from stackoverflow
+        {5, &letterN},    //first value is x coordinate, second is pointer to texture
+        {6, &letterA},
+        {7, &letterD},
+        {8, &letterI},
+        {9, &letterA}
+    };
+    
+    for (auto& pair : nameLetters) {
+        int x = pair.first;    //set x pos
+        Canis::GLTexture* tex = pair.second; //pair right texture
+    
+        Canis::Entity letter;
+        letter.active = true;
+        letter.tag = "letter";
+        letter.model = &cubeModel;
+        letter.shader = &shader;
+        letter.specular = &textureSpecular;
+        letter.albedo = tex;
+    
+        // in front of wall
+        letter.transform.position = glm::vec3(x, 4.0f, houseStartZ - 0.1f);
+        world.Spawn(letter);
     }
 
     //oak plank floors inside
