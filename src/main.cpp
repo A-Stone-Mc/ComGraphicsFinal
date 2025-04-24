@@ -110,6 +110,7 @@ int main(int argc, char* argv[])
     Canis::GLTexture roofTexture = Canis::LoadImageGL("assets/textures/aidanRoof.png", true);
     Canis::GLTexture roseTexture = Canis::LoadImageGL("assets/textures/aidanRoses.png", true);
     Canis::GLTexture orchidTexture = Canis::LoadImageGL("assets/textures/blue_orchid.png", true);
+    Canis::GLTexture smokeTexture = Canis::LoadImageGL("assets/textures/aidanSmoke.png", true);
     //letter textures
     Canis::GLTexture letterA = Canis::LoadImageGL("assets/textures/Mattahan-Umicons-Letter-A.16.png", true);
     Canis::GLTexture letterI = Canis::LoadImageGL("assets/textures/Mattahan-Umicons-Letter-I.16.png", true);
@@ -313,6 +314,35 @@ int main(int argc, char* argv[])
     }
 
 
+    //making the fireplace underneath the chimney
+    int baseY = 2;
+    int rightWallX = houseStartX + houseSize - 1; // x = 11
+    int fireplaceX = rightWallX - 1;              // x = 10 (1 block in from wall)
+    int centerZ = houseStartZ + houseSize - 3;    // z = 10 (back row inside)
+    int zStart = centerZ - 1;                     // z = 9 (left of center)
+    int zEnd = centerZ + 1;                       // z = 11 (right of center)
+    
+    for (int y = baseY; y <= baseY + 3; y++) {
+        for (int z = zStart; z <= zEnd; z++) {
+            // Skip the middle on the base layer for fire
+            if (y == baseY && z == centerZ)
+                continue;
+    
+            // stack chimney in middle
+            if ((y == baseY + 2 || y == baseY + 3) && z != centerZ)
+                continue;
+    
+            Canis::Entity fireplaceBlock;
+            fireplaceBlock.active = true;
+            fireplaceBlock.tag = "fireplace";
+            fireplaceBlock.model = &cubeModel;
+            fireplaceBlock.shader = &shader;
+            fireplaceBlock.specular = &textureSpecular;
+            fireplaceBlock.albedo = &chimneyTexture; //same brick texture I made
+            fireplaceBlock.transform.position = glm::vec3(fireplaceX, y, z);
+            world.Spawn(fireplaceBlock);
+        }
+    }
 
 
     //making an overhanging roof in a pointy shape
@@ -340,8 +370,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    //put chimney on top of roof
-    for (int y = 9; y < 12; y++) { // put it above the roof
+    //put chimney on top of roof above fireplace
+    for (int y = 9; y < 12; y++) { // y = 9, 10, 11
         Canis::Entity chimney;
         chimney.active = true;
         chimney.tag = "chimney";
@@ -350,10 +380,20 @@ int main(int argc, char* argv[])
         chimney.specular = &textureSpecular;
         chimney.albedo = &chimneyTexture;
     
-        // Placing at back  left corner of roof
-        chimney.transform.position = glm::vec3(houseStartX + 1, y, houseStartZ + houseSize - 2);
+        // Same x and z as the center of the chimney stack
+        chimney.transform.position = glm::vec3(fireplaceX, y, centerZ);
         world.Spawn(chimney);
     }
+
+    Canis::Entity smoke;
+    smoke.active = true;
+    smoke.tag = "smoke";
+    smoke.model = &grassModel;            
+    smoke.shader = &grassShader;          // Uses wind swaying
+    smoke.specular = &textureSpecular;
+    smoke.albedo = &smokeTexture;
+    smoke.transform.position = glm::vec3(fireplaceX, 12.0f, centerZ); // above top chimney
+    world.Spawn(smoke);
 
     srand(static_cast<unsigned int>(time(0))); // Seed randomness (from stackOverflow)
 
