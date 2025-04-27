@@ -40,6 +40,13 @@ bool IsDoorBlock(int x, int y, int z, int houseStartX, int houseStartZ) {
     return ((x == houseStartX + 4 || x == houseStartX + 5) && z == houseStartZ && (y >= 0 && y <= 2));
 }
 
+float fireTimer = 0.0f;
+int fireFrame = 0;
+std::vector<Canis::GLTexture*> fireFrames;
+Canis::Entity* fireEntity = nullptr;
+
+
+
 #ifdef _WIN32
 #define main SDL_main
 extern "C" int main(int argc, char* argv[])
@@ -117,6 +124,11 @@ int main(int argc, char* argv[])
     Canis::GLTexture letterD = Canis::LoadImageGL("assets/textures/Mattahan-Umicons-Letter-D.16.png", true);
     Canis::GLTexture letterN = Canis::LoadImageGL("assets/textures/Mattahan-Umicons-Letter-N.16.png", true);
     Canis::GLTexture letterM = Canis::LoadImageGL("assets/textures/Mattahan-Umicons-Letter-M.16.png", true);
+    //fire frames
+    Canis::GLTexture fire1 = Canis::LoadImageGL("assets/textures/fireAnimations0.png", true);
+    Canis::GLTexture fire2 = Canis::LoadImageGL("assets/textures/fireAnimations1.png", true);
+    Canis::GLTexture fire3 = Canis::LoadImageGL("assets/textures/fireAnimations2.png", true);
+    Canis::GLTexture fire4 = Canis::LoadImageGL("assets/textures/fireAnimations3.png", true);
     /// End of Image Loading
 
     /// Load Models
@@ -212,7 +224,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    //building the house (5-block tall walls, 10 x 10 base)
+    //building the house (5-block tall walls, dynamic base size)
 
     for (int y = 0; y < 5; y++) { // make walls 5 blocks tall
         for (int x = houseStartX; x < houseStartX + houseSize; x++) {
@@ -344,6 +356,11 @@ int main(int argc, char* argv[])
         }
     }
 
+    fireFrames = { &fire1, &fire2, &fire3, &fire4 };
+
+
+
+
 
     //making an overhanging roof in a pointy shape
     int roofBaseY = 6; //start above the walls
@@ -424,6 +441,22 @@ int main(int argc, char* argv[])
         world.Spawn(flower);
     }
 
+
+    //fire
+    Canis::Entity fire;
+    fire.active = true;
+    fire.tag = "fire";
+    fire.model = &cubeModel;
+    fire.shader = &shader;
+    fire.specular = &textureSpecular;
+    fire.albedo = fireFrames[0];
+    fire.transform.position = glm::vec3(fireplaceX, baseY, centerZ);
+
+    world.Spawn(fire);
+
+    // save a pointer to it
+    fireEntity = &world.GetEntities().back();
+
     //20 random grass with flower
     for (int i = 0; i < 20; i++) {
         int x = rand() % 15;
@@ -456,6 +489,13 @@ int main(int argc, char* argv[])
         Canis::Graphics::ClearBuffer(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 
         world.Update(deltaTime);
+        //change fire frame every 0.5s
+        fireTimer += deltaTime;
+        if (fireTimer >= 0.5f) {
+            fireFrame = (fireFrame + 1) % fireFrames.size(); //swap frame
+            fireEntity->albedo = fireFrames[fireFrame]; //update texture
+            fireTimer = 0.0f; //reset timer
+        }
         world.Draw(deltaTime);
 
         editor.Draw();
@@ -544,3 +584,6 @@ void SpawnLights(Canis::World &_world)
 
     _world.SpawnPointLight(pointLight);
 }
+
+
+
