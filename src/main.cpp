@@ -18,6 +18,7 @@
 #include "Canis/World.hpp"
 #include "Canis/Editor.hpp"
 #include "Canis/FrameRateManager.hpp"
+#include <SDL.h>
 
 using namespace glm;
 
@@ -44,6 +45,8 @@ float fireTimer = 0.0f;
 int fireFrame = 0;
 std::vector<Canis::GLTexture*> fireFrames;
 Canis::Entity* fireEntity = nullptr;
+
+Canis::PointLight fireLight;
 
 
 
@@ -496,6 +499,18 @@ int main(int argc, char* argv[])
             fireEntity->albedo = fireFrames[fireFrame]; //update texture
             fireTimer = 0.0f; //reset timer
         }
+
+         // Update fire light flickering
+        float time = SDL_GetTicks() * 0.001f;
+        float flicker = 0.6f + 0.4f * sin(time * 12.0f) * cos(time * 7.0f); // natural lookin flickering
+        
+        // Update fire light properties
+        fireLight.diffuse = glm::vec3(2.0f, 1.0f, 0.0f) * flicker;
+        fireLight.specular = glm::vec3(2.0f, 1.0f, 0.0f) * flicker;
+        
+        // update light in world (I added a new function)
+        world.UpdatePointLight(4, fireLight);
+
         world.Draw(deltaTime);
 
         editor.Draw();
@@ -555,34 +570,47 @@ void LoadMap(std::string _path)
 
 void SpawnLights(Canis::World &_world)
 {
-    Canis::DirectionalLight directionalLight;
-    _world.SpawnDirectionalLight(directionalLight);
-
-    Canis::PointLight pointLight;
-    pointLight.position = vec3(0.0f);
-    pointLight.ambient = vec3(0.2f);
-    pointLight.diffuse = vec3(0.5f);
-    pointLight.specular = vec3(1.0f);
-    pointLight.constant = 1.0f;
-    pointLight.linear = 0.09f;
-    pointLight.quadratic = 0.032f;
-
-    _world.SpawnPointLight(pointLight);
-
-    pointLight.position = vec3(0.0f, 0.0f, 1.0f);
-    pointLight.ambient = vec3(4.0f, 0.0f, 0.0f);
-
-    _world.SpawnPointLight(pointLight);
-
-    pointLight.position = vec3(-2.0f);
-    pointLight.ambient = vec3(0.0f, 4.0f, 0.0f);
-
-    _world.SpawnPointLight(pointLight);
-
-    pointLight.position = vec3(2.0f);
-    pointLight.ambient = vec3(0.0f, 0.0f, 4.0f);
-
-    _world.SpawnPointLight(pointLight);
+        Canis::DirectionalLight directionalLight;
+        directionalLight.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+        directionalLight.ambient = glm::vec3(0.01f);   // little ambient
+        directionalLight.diffuse = glm::vec3(0.02f);   // soft light
+        directionalLight.specular = glm::vec3(0.02f);
+        _world.SpawnDirectionalLight(directionalLight);
+    
+       
+        Canis::PointLight pointLight;
+        pointLight.position = vec3(0.0f);
+        pointLight.ambient = vec3(0.01f);
+        pointLight.diffuse = vec3(0.01f);
+        pointLight.specular = vec3(0.4f);
+        pointLight.constant = 1.0f;
+        pointLight.linear = 0.09f;
+        pointLight.quadratic = 0.032f;
+    
+        _world.SpawnPointLight(pointLight);
+    
+        pointLight.position = vec3(0.0f, 0.0f, 1.0f);
+        pointLight.ambient = vec3(4.0f, 0.0f, 0.0f);
+        _world.SpawnPointLight(pointLight);
+    
+        pointLight.position = vec3(-2.0f);
+        pointLight.ambient = vec3(0.0f, 4.0f, 0.0f);
+        _world.SpawnPointLight(pointLight);
+    
+        pointLight.position = vec3(2.0f);
+        pointLight.ambient = vec3(0.0f, 0.0f, 4.0f);
+        _world.SpawnPointLight(pointLight);
+    
+        // Fire light: 5th light
+        fireLight.position = glm::vec3(10.0f, 3.0f, 8.0f); // fireplace position
+        fireLight.ambient = glm::vec3(0.5f, 0.2f, 0.0f);
+        fireLight.diffuse = glm::vec3(2.0f, 1.0f, 0.0f);
+        fireLight.specular = glm::vec3(2.0f, 1.0f, 0.0f);
+        fireLight.constant = 1.0f;
+        fireLight.linear = 0.14f;
+        fireLight.quadratic = 0.07f;
+        
+        _world.SpawnPointLight(fireLight);
 }
 
 

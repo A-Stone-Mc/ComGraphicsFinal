@@ -18,6 +18,7 @@ namespace Canis
         void Spawn(Entity _entity);
         void SpawnPointLight(PointLight _light);
         void SpawnDirectionalLight(DirectionalLight _light);
+        void UpdatePointLight(int index, const PointLight &light);
         Camera& GetCamera() { return m_camera; }
         Entity* GetEntity(unsigned int _index) { return &m_entities[_index]; }
         std::vector<Entity>& GetEntities() { return m_entities; }

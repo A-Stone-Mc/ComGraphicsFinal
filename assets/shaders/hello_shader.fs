@@ -35,7 +35,7 @@ in vec3 fragmentNormal;
 uniform vec3 COLOR;
 uniform Material MATERIAL;
 uniform DirectionalLight DIRECTIONALLIGHT;
-uniform PointLight POINTLIGHTS[4];
+uniform PointLight POINTLIGHTS[5];
 uniform int NUMBEROFPOINTLIGHTS;
 uniform float TIME;
 

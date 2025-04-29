@@ -67,7 +67,7 @@ namespace Canis
             shader->Use();
             shader->SetVec3("COLOR", m_entities[i].color);
             shader->SetVec3("VIEWPOS", m_camera.Position);
-            shader->SetInt("NUMBEROFPOINTLIGHTS", 4);
+            shader->SetInt("NUMBEROFPOINTLIGHTS", m_pointLights.size());
             shader->SetFloat("TIME", SDL_GetTicks() / 1000.0f);
 
             UpdateLights(*shader);
@@ -129,6 +129,8 @@ namespace Canis
         return nullptr;
     }
 
+    
+
     std::vector<Entity *> World::GetEntitiesWithTag(std::string _tag)
     {
         std::vector<Entity *> matches = {};
@@ -152,6 +154,12 @@ namespace Canis
                 return &m_pointLights[i];
 
         return nullptr;
+    }
+
+    void World::UpdatePointLight(int index, const PointLight &light) {
+        if (index >= 0 && index < m_pointLights.size()) {
+            m_pointLights[index] = light;
+        }
     }
 
     void World::UpdateLights(Canis::Shader &_shader)
